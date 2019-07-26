@@ -1,0 +1,140 @@
+Create table Login
+(
+	Username number primary Key,
+	password varchar2(30),
+	typeUser varchar2(30) check (typeUser in('ADMIN','EMPLOYEE','MGR'))
+);
+Create Table Users
+(
+   Empno Number Primary Key,
+   EmployeeName varchar2(30),
+   Job varchar2(30),
+   Salary Number(9,2),
+   MgrNo Number, 
+   ContactNumber varchar2(15),
+   Email varchar2(30),
+);
+Create Table TrainingCourses 
+(
+   CourseID varchar2(30) Primary Key,
+   Empno number references Users(empno),
+   CourseName varchar2(30)
+);
+Create Table ScheduleTraining 
+(
+   TrainingID varchar2(30) primary key,
+   CourseID varchar2(30) references TrainingCourses(CourseID),
+   Venue varchar2(30),
+   startDate Date,
+   endDate Date
+);
+Create Table RegisterCourse
+(
+   RegisterID varchar2(30) primary key,
+   TrainingID varchar2(30) references ScheduleTraining(TrainingID),
+   Username number references login(username),
+   ApprovalStatus varchar2(30) default 'Pending'
+);
+
+Create Table Feedback
+(
+    TrainingId varchar2(30) references ScheduleTraining(TrainingID),
+    Rating number(9,2),
+    cntPeople number
+);
+=====for add user=======
+
+=============AboutUsers=======================
+
+
+
+
+
+
+
+
+
+
+-----------------prcAddUser------------------
+create or replace procedure prcAddUser
+( 
+	eno login.username%type,
+	pwd login.password%type,
+	typ login.typeuser%type,
+	name Users.Employeename%type,
+	jb users.job%type,
+	sal users.salary%type,
+	mgrId users.mgrNo%type,
+	conNum users.contactNumber%type,
+	mail users.email%type
+	
+)
+as
+begin 
+insert into login values(eno,pwd,typ);
+insert into users (empno,employeeName,job,mgrno,salary,contactNumber,email)
+	values(eno,name,jb,mgrId,sal,conNum,mail);
+end;
+================
+=============-------------give Feedback*-------------------------------------------
+create or replace procedure prcGiveFeedback
+(
+	eno feedback.empno%type,
+	trnid feedback.trainingId%type,
+	rat feedback.rating%type
+)
+As
+begin
+update feedback set rating=(rating*cntPeople+rat)/(cntPeople+1),
+cntPeople=cntPeople+1 where trainingId=trnId and empno=eno;
+end;
+
+===============*************View Feedback----------------------------
+create or replace procedure prcViewfeedback
+(
+	trnid feedback.trainingId%type,
+	rat out feedback.rating%type,
+	cnt_people out feedback.cntpeople%type
+	
+)
+as
+begin
+select rating,cntpeople into rat,cnt_people from feedback 
+	where trainingid=trnid ;
+end;
+
+
+-----------*********prcSheduleTrainig**********---------------
+create or replace procedure prcSheduleTraining
+( 
+	trnId ScheduleTraining.trainingId%type,
+	crsId ScheduleTraining.courseId%type,
+	stdt  ScheduleTraining.startDate%type,
+	endt  ScheduleTraining.endDate%type,
+	vnu ScheduleTraining.venue%type
+)
+As
+begin
+Insert into ScheduleTraining  values (trnId,crsId,stdt,endt,vnu);
+end;
+************login*****************
+create or replace procedure prcLoginCheck
+(
+	usrname login.username%type,
+	psd 	login.password%type,
+	typ out	
+login.typeUser%type,
+	flag out number
+)
+as
+begin
+select count(*) into flag from login where username=usrName and password=psd ;
+if flag=1 then
+	select typeUser into typ from login where username=usrName and password=psd ;
+end if;
+end;
+
+
+
+
+
